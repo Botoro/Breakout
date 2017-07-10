@@ -163,7 +163,14 @@ function drawPelota(){
 }
 
 function drawBloques(){
-	if (bloque.estado==1){
+	if (bloque.estado==0){
+		ctx.save();
+		ctx.beginPath();
+		ctx.fillStyle="red";
+		ctx.clearRect(bloque.posX, bloque.posY, bloque.width, bloque.height);
+		ctx.restore();
+	}
+	else{
 		ctx.save();
 		ctx.beginPath();
 		ctx.fillStyle="red";
