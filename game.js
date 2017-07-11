@@ -6,6 +6,9 @@ ctx.canvas.height = 500;
 const cWidth = ctx.canvas.width;
 const cHeight = ctx.canvas.height;
 
+var colis = 0;
+var marca = 0;
+
 class Player{
 	
 	constructor(posX=0, posY=0, width=0, height=0){
@@ -28,7 +31,12 @@ class Bloque {
 	}
 }
 
-var velocidad = 6;
+var bloques = new Array();
+var matrisBloques = new Array();
+var filas = 1;
+var columnas = 6;
+
+var velocidad = 5;
 var game_loop;
 var player;
 var bloque;
@@ -39,6 +47,7 @@ var playerVivo = true;
 
 var stopPlayer;
 var stopEnemigo;
+var juegoAndando;
 var keyP;
 var dir;
 var clic=0;
@@ -78,9 +87,13 @@ document.addEventListener("keydown",function(event){
 			keyP = "r";
 			break;
 		case 65:
-		case (37):
+		case (37): 
 			keyP = "l";
 			break;
+		
+		case 32:
+			stopPelota=true;
+		break;
 		}
 		if (key==13 && !playerVivo){
 			init();
@@ -90,13 +103,28 @@ document.addEventListener("keydown",function(event){
 
 function init(){
 	s=0; vidas=3;
-	//player =  {posX: (ctx.canvas.width/2)-30, posY: ctx.canvas.height-10, width: 100, height: 10};
+	//player =  {posX: (cWidth/2)-30, posY: cHeight-10, width: 100, height: 10};
 
-	player = new Player((ctx.canvas.width/2)-30,ctx.canvas.height-10,100,10);
+	player = new Player((cWidth/2)-50,cHeight-10,100,10);
 
-	pelota = {posX: (ctx.canvas.width/2), posY: 10, dirX: 5, dirY:10, per:7};
+	pelota = {posX: (cWidth/2), posY: cHeight-20, dirX: 5, dirY:10, per:7};
 
-	bloque = new Bloque(10,300, 80, 10, 1);
+	//bloque = new Bloque(10,300, 80, 10, 1);
+	for (var i = 1; i <=filas; i++){
+		for (var j = 0; j <columnas; j++) {
+			if(j==0)
+				bloques[j] =new Bloque(j,20, 50, 20, 1);
+			else{
+				bloques[j] =new Bloque((j-1)*50,(i*20), 50, 20, 1);
+
+			}
+		}
+		matrisBloques[i] = bloques;
+	}
+
+
+	cambioDireccion('up');
+
 
 	if(typeof game_loop != "undefined"){
 		clearInterval(game_loop);
@@ -104,8 +132,10 @@ function init(){
 	clearInterval(start_loop);
 	game_loop = setInterval(main, 30);
 	stopPlayer = false;
+	stopPelota = false;
 	stopEnemigo = false;
 	playerVivo = true;
+	juegoAndando = true;
 	keyP="";
 }
 
@@ -119,9 +149,7 @@ function main(){
 	if (playerVivo){
 		drawPlayer();
 		drawPelota();
-		if (bloque.estado==1){
-			drawBloques();
-		}
+		drawBloques();
 		rebotePelota();
 		colision();	
 	}else{
@@ -163,19 +191,18 @@ function drawPelota(){
 }
 
 function drawBloques(){
-	if (bloque.estado==0){
-		ctx.save();
-		ctx.beginPath();
-		ctx.fillStyle="red";
-		ctx.clearRect(bloque.posX, bloque.posY, bloque.width, bloque.height);
-		ctx.restore();
-	}
-	else{
-		ctx.save();
-		ctx.beginPath();
-		ctx.fillStyle="red";
-		ctx.fillRect(bloque.posX, bloque.posY, bloque.width, bloque.height);
-		ctx.restore();
+	for (var i = 1; i <=filas; i++){
+		for (var j = 0; j <bloques.length; j++) {
+			ctx.save();
+			ctx.beginPath();
+			ctx.fillStyle = 'rgb(' + Math.floor(255 - 42.5 * i) + ', ' +
+                       Math.floor(255 - 42.5 * i) + ', '+Math.floor(255 - 42.5 * i)+')';
+			ctx.fillRect(matrisBloques[i][j].posX, matrisBloques[i][j].posY, matrisBloques[i][j].width, matrisBloques[i][j].height);
+			ctx.strokeStyle="#000";
+			ctx.strokeRect(matrisBloques[i][j].posX, matrisBloques[i][j].posY, matrisBloques[i][j].width, matrisBloques[i][j].height);
+
+			ctx.restore();
+		}
 	}
 }
 
@@ -210,30 +237,41 @@ function colision(){
 		//cambia dirección de pelota
 		if (pelota.posX <= player.posX+(player.width/2)){
 			cambioDireccion('up');
-			cambioDireccion('left');
+			cambioDireccion('right');
 		}
 		else{
 			cambioDireccion('up');
-			cambioDireccion('right');
+			cambioDireccion('left');
 		}
 	}
 
-	if (pelota.posY == cHeight){
+	if (pelota.posY >= cHeight){
+
 		destruyePelota();
+		cambioDireccion('up');
 	}
 
 	//bloques colision lo hare por parte para entender.
-	if (pelota.posX >= bloque.posX && pelota.posX <= bloque.posX + bloque.width &&
-		pelota.posY >= bloque.posY && pelota.posY <= bloque.posY + bloque.height){
-		
-		if (pelota.posX <= bloque.posX+(player.width/2)){
-			cambioDireccion('left');
+	for (var i = 1; i <= filas; i++) {
+		for(var j=0;j < bloques.length;j++){
+			if (pelota.posX >= matrisBloques[i][j].posX && pelota.posX <= matrisBloques[i][j].posX + matrisBloques[i][j].width &&
+				pelota.posY >= matrisBloques[i][j].posY && pelota.posY <= matrisBloques[i][j].posY + matrisBloques[i][j].height){
+				
+				if (pelota.posX <= matrisBloques[i][j].posX+(player.width/2)){
+					cambioDireccion('left');
+				}
+				else{
+					cambioDireccion('right');
+				}
+				 			bloques.splice(j,1);
+
+			}
 		}
-		else{
-			cambioDireccion('right');
+		if (colis==1) {
+			bloques.splice(marca,1);
+			colis=0;
+
 		}
-		console.log("pelota 0");
-		bloque.estado = 0;
 
 	}
 
@@ -241,8 +279,10 @@ function colision(){
 }
 
 function destruyePelota(){
-	pelota.posX = (ctx.canvas.width/2);
-	pelota.posY = 10;
+	pelota.posX = (player.posX+player.width/2);
+	pelota.posY = cHeight-30;
+	stopPelota = false;
+	juegoAndando =
 	vidas--;
 	//player.width -= 30;
 	if(vidas<=0){
@@ -252,20 +292,33 @@ function destruyePelota(){
 }
 
 function rebotePelota(){
-	if(pelota.posY <= pelota.per){
-		cambioDireccion('down');
-	}
+	if (stopPelota){
+		if(pelota.posY <= pelota.per){
+			cambioDireccion('down');
+		}
 
-	if(pelota.posX >= ctx.canvas.width){
-		cambioDireccion('left');
-	}
+		if(pelota.posX >= cWidth){
+			cambioDireccion('left');
+		}
 
-	if(pelota.posX <= pelota.per){
-		cambioDireccion('right');
-	}
+		if(pelota.posX <= pelota.per){
+			cambioDireccion('right');
+		}
 
-	pelota.posY += pelota.dirY;
-	pelota.posX += pelota.dirX;
+		pelota.posY += pelota.dirY;
+		pelota.posX += pelota.dirX;
+	}
+	else{
+		pelota.posY = cHeight-15;
+		pelota.posX = player.posX + player.width/2;
+		if(pelota.posX >= cWidth/2){
+			cambioDireccion('left');
+		}
+
+		if(pelota.posX <= cWidth/2){
+			cambioDireccion('right');
+		}	
+	}
 }
 
 function cambioDireccion(dir){
