@@ -6,8 +6,7 @@ ctx.canvas.height = 500;
 const cWidth = ctx.canvas.width;
 const cHeight = ctx.canvas.height;
 
-var colis = 0;
-var marca = 0;
+var bloquesDestruidos = 0;
 
 class Player{
 	
@@ -33,18 +32,19 @@ class Bloque {
 
 var bloques = new Array();
 var matrisBloques = new Array();
-var filas = 1;
-var columnas = 6;
-
+var filas = 2;
+var columnas = 6; // columnas +1
 var velocidad = 5;
 var game_loop;
 var player;
 var bloque;
 var start_loop;
+var arreglo = new Array();
 var s;
 var vidas;
 var playerVivo = true;
-
+var nivelSuperado = false;
+var variacionBola = 0;
 var stopPlayer;
 var stopEnemigo;
 var juegoAndando;
@@ -53,6 +53,7 @@ var dir;
 var clic=0;
 var textPosX = cWidth/2;
 var textPosY = cHeight/2;
+var position;
 
 var bgSprite = new Image();
 bgSprite.src = "fondo.jpg";
@@ -66,7 +67,7 @@ document.getElementById("canvas").addEventListener("click", function(){
 	if(!playerVivo){
 		init();
 	}
-
+	stopPelota=true;
 	if(clic==0 ){
 		keyP = "r";
 		clic=1;
@@ -104,26 +105,31 @@ document.addEventListener("keydown",function(event){
 function init(){
 	s=0; vidas=3;
 	//player =  {posX: (cWidth/2)-30, posY: cHeight-10, width: 100, height: 10};
+	filas = 1;
+	columnas = 6;
+	bloquesDestruidos=0;
+	newLevel();
+}
 
+function newLevel(){
 	player = new Player((cWidth/2)-50,cHeight-10,100,10);
-
-	pelota = {posX: (cWidth/2), posY: cHeight-20, dirX: 5, dirY:10, per:7};
+	pelota = {posX: (cWidth/2), posY: cHeight-15, dirX: 0, dirY:10, per:7};
 
 	//bloque = new Bloque(10,300, 80, 10, 1);
 	for (var i = 1; i <=filas; i++){
-		for (var j = 0; j <columnas; j++) {
+		//console.log(i);
+		for (var j = 0; j <=columnas-1; j++) {
 			if(j==0)
-				bloques[j] =new Bloque(j,20, 50, 20, 1);
-			else{
-				bloques[j] =new Bloque((j-1)*50,(i*20), 50, 20, 1);
+				bloques[j] =new Bloque(j,(i*20), 50, 20, 1);	
+			else
+				bloques[j] =new Bloque(50*j,(i*20), 50, 20, 1);	
 
-			}
+			//console.log("("+bloques[j].posX+","+bloques[j].posY+")");
 		}
 		matrisBloques[i] = bloques;
+		bloques = new Array();
 	}
 
-
-	cambioDireccion('up');
 
 
 	if(typeof game_loop != "undefined"){
@@ -137,6 +143,7 @@ function init(){
 	playerVivo = true;
 	juegoAndando = true;
 	keyP="";
+
 }
 
 function getRandom(min, max) {
@@ -156,8 +163,12 @@ function main(){
 		gameOver();
 	}
 
-	if (!stopPlayer)		
-		movePlayer(keyP);	
+	if (nivelSuperado)
+		levelUp();
+
+	if (!stopPlayer){		
+		movePlayer(keyP);
+	}	
 	score();
 	vidasTexto();			
 }
@@ -192,7 +203,7 @@ function drawPelota(){
 
 function drawBloques(){
 	for (var i = 1; i <=filas; i++){
-		for (var j = 0; j <bloques.length; j++) {
+		for (var j = 0; j <matrisBloques[i].length; j++) {
 			ctx.save();
 			ctx.beginPath();
 			ctx.fillStyle = 'rgb(' + Math.floor(255 - 42.5 * i) + ', ' +
@@ -234,53 +245,75 @@ function colision(){
 	if (player.posY <= pelota.posY+pelota.per
 		&& pelota.posX >= player.posX 
 		&& pelota.posX <= player.posX+player.width){
+
+		
+
 		//cambia dirección de pelota
-		if (pelota.posX <= player.posX+(player.width/2)){
-			cambioDireccion('up');
-			cambioDireccion('right');
-		}
-		else{
+		if (pelota.posX < player.posX+(player.width/2)){
+			position = player.posX+(player.width/2);
+			//console.log("Player: " + position);
+			//console.log("Pelota: " + (position - pelota.posX));
+			variacionBola = Math.floor((position - pelota.posX)/8);
+			pelota.dirX = variacionBola;
 			cambioDireccion('up');
 			cambioDireccion('left');
+		}
+		else{
+			position = player.posX+(player.width/2);
+			variacionBola = Math.floor((pelota.posX-position )/8);
+			pelota.dirX = variacionBola;
+			cambioDireccion('up');
+			cambioDireccion('right');
 		}
 	}
 
 	if (pelota.posY >= cHeight){
 
 		destruyePelota();
-		cambioDireccion('up');
 	}
 
 	//bloques colision lo hare por parte para entender.
-	for (var i = 1; i <= filas; i++) {
-		for(var j=0;j < bloques.length;j++){
+	for (var i = 1; i <=filas; i++){
+		for (var j = 0; j < matrisBloques[i].length; j++) {
 			if (pelota.posX >= matrisBloques[i][j].posX && pelota.posX <= matrisBloques[i][j].posX + matrisBloques[i][j].width &&
-				pelota.posY >= matrisBloques[i][j].posY && pelota.posY <= matrisBloques[i][j].posY + matrisBloques[i][j].height){
-				
+				pelota.posY+pelota.per >= matrisBloques[i][j].posY && pelota.posY+pelota.per <= matrisBloques[i][j].posY + matrisBloques[i][j].height){
+				nivelSuperado = false;
+				s += 10;
+
+				if (pelota.posY <= matrisBloques[i][j].posY + matrisBloques[i][j].height){
+					cambioDireccion('down');
+				}
+				//destruye todo
+				 if (pelota.posY <= matrisBloques[i][j].posY){
+				 	cambioDireccion('up');
+				 }
+
+				//lado izquiedo Bloque
 				if (pelota.posX <= matrisBloques[i][j].posX+(player.width/2)){
 					cambioDireccion('left');
 				}
+				//lado derecho Bloque
 				else{
 					cambioDireccion('right');
 				}
-				 			bloques.splice(j,1);
-
+				//destruyo bloque
+				matrisBloques[i].splice(j,1);
+				bloquesDestruidos++;
 			}
 		}
-		if (colis==1) {
-			bloques.splice(marca,1);
-			colis=0;
-
-		}
-
 	}
 
-
+	if (bloquesDestruidos==(filas*columnas)){
+		nivelSuperado = true;
+		filas++;
+		bloquesDestruidos=0;
+		newLevel();
+	}
 }
 
 function destruyePelota(){
 	pelota.posX = (player.posX+player.width/2);
-	pelota.posY = cHeight-30;
+	pelota.posY = cHeight-15;
 	stopPelota = false;
 	juegoAndando =
 	vidas--;
@@ -289,6 +322,7 @@ function destruyePelota(){
 		gameOver();
 		playerVivo=false;
 	}
+
 }
 
 function rebotePelota(){
@@ -325,6 +359,9 @@ function cambioDireccion(dir){
 	if ((dir=='up' && pelota.dirY > 0) || (dir=='down' && pelota.dirY < 0))
 		pelota.dirY = -pelota.dirY;
 
+	if (dir=='up' && pelota.dirY > 0)
+		pelota.dirY = -pelota.dirY;
+
 	if (dir=='down' && pelota.dirY > 0)
 		pelota.dirY = pelota.dirY;
 
@@ -350,7 +387,24 @@ function gameOver(){
 	ctx.fillText(title,textPosX,textPosY);
 	var subtitle = "Volver a comenzar";
 	ctx.font = "bold 10px Courier";
+	ctx.fillStyle = "white";
 	ctx.fillText(subtitle,textPosX,textPosY+10)
+	subtitle = "Puntaje: "+s;
+	ctx.font = "bold 10px Courier";
+	ctx.fillText(subtitle,textPosX,textPosY+20)
+	ctx.restore();  
+}
+
+function levelUp(){
+	ctx.save();
+	var title = "Nivel "+filas;
+	ctx.font = "bold 30px Courier";
+	ctx.fillStyle = "white";
+	ctx.textAlign = "center";
+	ctx.fillText(title,textPosX,textPosY);
+	var subtitle = "Puntaje: "+s;
+	ctx.font = "bold 10px Courier";
+	ctx.fillText(subtitle,textPosX,textPosY+20)
 	ctx.restore();  
 }
 
