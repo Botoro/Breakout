@@ -56,10 +56,10 @@ var textPosY = cHeight/2;
 var position;
 
 var bgSprite = new Image();
-bgSprite.src = "fondo.jpg";
+bgSprite.src = "img/breakout_bg.png";
 
 var playerSprite = new Image();
-playerSprite.src = "nave.jpg";
+playerSprite.src = "img/png/paddleRed.png";
 
 
 document.getElementById("canvas").addEventListener("click", function(){
@@ -179,15 +179,15 @@ function drawBackground(){
 	ctx.fillRect (0,0,cWidth,cHeight);
 	ctx.strokeStyle = "red"; 
 	ctx.strokeRect (0,0,cWidth,cHeight);
-	//ctx.drawImage(bgSprite,0,0,cWidth,cHeight);
+	ctx.drawImage(bgSprite,0,0,cWidth,cHeight);
 	ctx.restore();
 
 }
 function drawPlayer(){
 	ctx.save();
-	ctx.fillStyle = "#FFF";
+	//ctx.fillStyle = "#FFF";
 	ctx.fillRect (player.posX, player.posY, player.width, player.height);
-	//ctx.drawImage(playerSprite,player.posX,player.posY,player.width,player.height);
+	ctx.drawImage(playerSprite,player.posX,player.posY,player.width,player.height);
 	ctx.restore();
 }
 
