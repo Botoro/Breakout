@@ -149,14 +149,20 @@ function newLevel(){
 }
 function bloquesDesign(d){
 	var cadena = d;
-	for (var i = 1; i <=filas; i++){
-		for (var j = 0; j <=columnas-1; j++) {
-			console.log(cadena.charAt(j) +" vj: "+ j);
-			if(cadena.charAt(j)=='*'){
-				console.log("d: "+matrisBloques[i][j].posX);
-				matrisBloques[i].splice(j,1);
-			}
+	var eliminarCadena = ""
+	for (var j = 0; j <=columnas-1; j++) {
+		if(cadena.charAt(j)=='*'){
+			console.log("a eliminar: "+j);
+			eliminarCadena += j;
 		}
+	}
+	console.log(eliminarCadena);
+
+	for (var i = 1; i <=filas; i++){
+		for(i=0; i<eliminarCadena.length; i++) {
+			matrisBloques[i].splice(eliminarCadena.charAt(i),1);
+		}
+			
 	}
 	
 
