@@ -35,6 +35,7 @@ var matrisBloques = new Array();
 var filas = 2;
 var columnas = 6; // columnas +1
 var velocidad = 5;
+var velocidadBola = 5;
 var game_loop;
 var player;
 var bloque;
@@ -82,8 +83,11 @@ document.getElementById("canvas").addEventListener("click", function(){
 
 },false);
 
+
+
 document.addEventListener("keydown",function(event){
 	var key = event.which;
+	stopPlayer = false;
 	switch(key){
 		case 68:
 		case (39):
@@ -104,19 +108,44 @@ document.addEventListener("keydown",function(event){
 
 },false);
 
+
+document.addEventListener("keyup",function(event){
+	var key = event.which;
+	switch(key){
+		case 68:
+		case (39):
+			stopPlayer = true;
+			break;
+		case 65:
+		case (37): 
+			stopPlayer = true;
+			break;
+		
+		case 32:
+			stopPelota=true;
+		break;
+		}
+		if (key==13 && !playerVivo){
+			init();
+		}
+
+},false);
+
 function init(){
 	s=0; vidas=3;
-	//player =  {posX: (cWidth/2)-30, posY: cHeight-10, width: 100, height: 10};
 	filas = 1;
 	columnas = 6;
 	bloquesDestruidos=0;
 	combo = 1;
 	newLevel();
+	main();
+
 }
 
 function newLevel(){
+
 	player = new Player((cWidth/2)-50,cHeight-10,100,10);
-	pelota = {posX: (cWidth/2), posY: cHeight-15, dirX: 0, dirY:10, per:7};
+	pelota = {posX: (cWidth/2), posY: cHeight-15, dirX: 0, dirY:velocidadBola, per:7};
 	//bloque = new Bloque(10,300, 80, 10, 1);
 	for (var i = 1; i <=filas; i++){
 		//console.log(i);
@@ -132,41 +161,24 @@ function newLevel(){
 		bloques = new Array();
 	}
 
-	bloquesDesign(level1);
-
+	//bloquesDesign(level1);
+	/*
 	if(typeof game_loop != "undefined"){
 		clearInterval(game_loop);
 	}
 	clearInterval(start_loop);
-	game_loop = setInterval(main, 30);
-	stopPlayer = false;
+	game_loop = setInterval(main, 30);*/
+	stopPlayer = true;
 	stopPelota = false;
 	stopEnemigo = false;
 	playerVivo = true;
 	juegoAndando = true;
 	keyP="";
+	cambioDireccion('up');
+
 
 }
-function bloquesDesign(d){
-	var cadena = d;
-	var eliminarCadena = ""
-	for (var j = 0; j <=columnas-1; j++) {
-		if(cadena.charAt(j)=='*'){
-			console.log("a eliminar: "+j);
-			eliminarCadena += j;
-		}
-	}
-	console.log(eliminarCadena);
 
-	for (var i = 1; i <=filas; i++){
-		for(i=0; i<eliminarCadena.length; i++) {
-			matrisBloques[i].splice(eliminarCadena.charAt(i),1);
-		}
-			
-	}
-	
-
-}
 function getRandom(min, max) {
 	return Math.floor(Math.random() * (max - min)) + min;
 }
@@ -191,7 +203,8 @@ function main(){
 		movePlayer(keyP);
 	}	
 	score();
-	vidasTexto();			
+	vidasTexto();	
+	requestAnimationFrame(main);		
 }
 
 function drawBackground(){
@@ -274,15 +287,28 @@ function colision(){
 			position = player.posX+(player.width/2);
 			//console.log("Player: " + position);
 			//console.log("Pelota: " + (position - pelota.posX));
-			variacionBola = Math.floor((position - pelota.posX)/8);
-			pelota.dirX = variacionBola;
+			variacionBola = Math.floor((position - pelota.posX)/10);
+
+			if (variacionBola==0){
+				pelota.dirX = 1;
+			}
+			else{
+				pelota.dirX = variacionBola;
+			}
+			
 			cambioDireccion('up');
 			cambioDireccion('left');
 		}
 		else{
 			position = player.posX+(player.width/2);
-			variacionBola = Math.floor((pelota.posX-position )/8);
+			variacionBola = Math.floor((pelota.posX-position )/10);
 			pelota.dirX = variacionBola;
+			if (variacionBola==0){
+				pelota.dirX = 1;
+			}
+			else{
+				pelota.dirX = variacionBola;
+			}
 			cambioDireccion('up');
 			cambioDireccion('right');
 		}
@@ -328,7 +354,10 @@ function colision(){
 	if (bloquesDestruidos==(filas*columnas)){
 		nivelSuperado = true;
 		filas++;
+		velocidadBola++;
 		bloquesDestruidos=0;
+		pelota.posX = (player.posX+player.width/2);
+		pelota.posY = cHeight-15;
 		newLevel();
 	}
 }
@@ -337,7 +366,6 @@ function destruyePelota(){
 	pelota.posX = (player.posX+player.width/2);
 	pelota.posY = cHeight-15;
 	stopPelota = false;
-	juegoAndando =
 	vidas--;
 	//player.width -= 30;
 	if(vidas<=0){
@@ -378,17 +406,25 @@ function rebotePelota(){
 }
 
 function cambioDireccion(dir){
-	if ((dir=='up' && pelota.dirY > 0) || (dir=='down' && pelota.dirY < 0))
-		pelota.dirY = -pelota.dirY;
+	
 
 	if (dir=='up' && pelota.dirY > 0)
 		pelota.dirY = -pelota.dirY;
 
+	if (dir=='up' && pelota.dirY < 0)
+		pelota.dirY = +pelota.dirY;
+
 	if (dir=='down' && pelota.dirY > 0)
 		pelota.dirY = pelota.dirY;
 
+	if (dir=='down' && pelota.dirY < 0)
+		pelota.dirY = -pelota.dirY;
+
 	if (dir=='left' && pelota.dirX > 0){
 		pelota.dirX = -pelota.dirX;
+	}
+	if (dir=='left' && pelota.dirX < 0){
+		pelota.dirX = +pelota.dirX;
 	}
 
 	if (dir=='right' && pelota.dirX <0){
@@ -451,9 +487,3 @@ function vidasTexto(){
 }
 
 init();	
-
-
-
-
-
-
